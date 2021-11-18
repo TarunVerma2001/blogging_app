@@ -1,46 +1,26 @@
-import 'dart:convert';
-import 'package:flutter/material.dart';
+
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 class ApiServices {
   //TODO: handle errors
 
   login(String email, String pass) async {
     var dio = new Dio();
+
+    Map data = {'email': email, 'password': pass};
+
     try {
-      Map data = {'email': email, 'password': pass};
-
-      try {
-        var response = await dio
-            .post('http://192.168.43.212:8000/api/v1/users/login', data: data);
-
-        return response;
-      } on DioError catch (e) {
-        Fluttertoast.showToast(
-            msg: e.response!.data['message'],
-            // msg: 'hello',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.teal,
-            textColor: Colors.white,
-            fontSize: 16.0);
-        print(e.response!.data['message']);
-      }
-    } catch (err) {
-      print('Error');
-      print(err);
+      var response = await dio
+          .post('http://192.168.43.212:8000/api/v1/users/login', data: data);
+      return response;
+    } on DioError catch (e) {
+      throw e;
     }
   }
-  // if (e.response != null) {
-  //   print(e.response!.data);
-  // } else {
-  //   // Something happened in setting up or sending the request that triggered an Error
-  //   print(e.requestOptions);
-  //   // print(e.message);
-  // }
 
   signUp(String name, String email, String password,
       String passwordConfirm) async {
@@ -52,10 +32,14 @@ class ApiServices {
       'passwordConfirm': passwordConfirm
     };
 
-    var response = await dio
-        .post('http://192.168.43.212:8000/api/v1/users/signup', data: data);
+    try {
+      var response = await dio
+          .post('http://192.168.43.212:8000/api/v1/users/signup', data: data);
 
-    return response;
+      return response;
+    } on DioError catch (e) {
+      throw e;
+    }
   }
 
   getToken() async {
@@ -66,27 +50,49 @@ class ApiServices {
 
   getAllBlogs() async {
     var dio = new Dio();
-    var response = await dio.get('http://192.168.43.212:8000/api/v1/blogs');
-    return response;
+    try {
+      var response = await dio.get('http://192.168.43.212:8000/api/v1/blogs');
+      return response;
+    } on DioError catch (e) {
+      throw e;
+    }
   }
 
   getBlog(String id) async {
     var dio = new Dio();
-    var response =
-        await dio.get('http://192.168.43.212:8000/api/v1/blogs/${id}');
-    return response;
+    try {
+      var response =
+          await dio.get('http://192.168.43.212:8000/api/v1/blogs/${id}');
+      return response;
+    } on DioError catch (e) {
+      throw e;
+    }
   }
 
   uploadImage(String path) async {
+    var dio = new Dio();
+
     var token = await getToken();
 
-    var response = await http
-        .post(Uri.parse('http://192.168.43.212:8000/api/v1/blogs'), headers: {
-      'Authorization': 'Bearer $token',
-    }).catchError((err) => print(err));
+    var formData = FormData.fromMap({
+      'image': await MultipartFile.fromFile(path),
+    });
+
+    dio.options.headers['Authorization'] = "Bearer ${token}";
+
+    try {
+      var response = await dio.post('http://192.168.43.212:8000/api/v1/blogs/uploadImage',
+          data: formData);
+
+      print(response.toString());
+      return response;
+    } on DioError catch (e) {
+      print(e.response);
+      throw e;
+    }
   }
 
-  createBlog(String title, String description, String tag) async {
+  createBlog(String title, String description, String tag, String img) async {
     var dio = new Dio();
     var token = await getToken();
 
@@ -94,17 +100,19 @@ class ApiServices {
       'title': title,
       'description': description,
       'tag': tag,
+      'image': img,
     };
 
     dio.options.headers['Authorization'] = "Bearer ${token}";
 
-    var response = await dio
-        .post('http://192.168.43.212:8000/api/v1/blogs', data: data)
-        .catchError((err) {
-      print(err);
-    });
+    try {
+      var response =
+          await dio.post('http://192.168.43.212:8000/api/v1/blogs', data: data);
 
-    return response;
+      return response;
+    } on DioError catch (e) {
+      throw e;
+    }
   }
 
   likedByUser(String blogId) async {
@@ -115,16 +123,15 @@ class ApiServices {
 
     dio.options.headers['Authorization'] = "Bearer ${token}";
 
-    var response = await dio
-        .post('http://192.168.43.212:8000/api/v1/blogs/likedByUser', data: data)
-        .catchError((err) {
-      print(err);
-    });
+    try {
+      var response = await dio.post(
+          'http://192.168.43.212:8000/api/v1/blogs/likedByUser',
+          data: data);
 
-    // print('liked by user: ');
-    print(response.toString());
-
-    return response;
+      return response;
+    } on DioError catch (e) {
+      throw e;
+    }
   }
 
   updateLike(String blogId) async {
@@ -135,25 +142,29 @@ class ApiServices {
 
     dio.options.headers['Authorization'] = "Bearer ${token}";
 
-    var response = await dio
-        .patch('http://192.168.43.212:8000/api/v1/blogs/updateLikes',
-            data: data)
-        .catchError((err) {
-      print(err);
-    });
+    try {
+      var response = await dio.patch(
+          'http://192.168.43.212:8000/api/v1/blogs/updateLikes',
+          data: data);
 
-    print('liked by user: ');
-    print(response.toString());
-
-    return response;
+      return response;
+    } on DioError catch (e) {
+      throw e;
+    }
   }
 
   getMe() async {
     var token = await getToken();
 
-    return await http
-        .get(Uri.parse('http://192.168.43.212:8000/api/v1/users/me'), headers: {
-      'Authorization': 'Bearer $token',
-    }).catchError((err) => print(err));
+    try {
+      var response = await http.get(
+          Uri.parse('http://192.168.43.212:8000/api/v1/users/me'),
+          headers: {
+            'Authorization': 'Bearer $token',
+          });
+      return response;
+    } on DioError catch (e) {
+      throw e;
+    }
   }
 }

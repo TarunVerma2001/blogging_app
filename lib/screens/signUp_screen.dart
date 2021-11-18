@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:dio/dio.dart';
 import 'package:blogging_app/screens/home_page.dart';
 import 'package:blogging_app/screens/login_screen.dart';
 import 'package:blogging_app/services/apiServices.dart';
@@ -90,33 +90,36 @@ class _SignUpPageState extends State<SignUpPage> {
   signUp(String name, String email, String password,
       String passwordConfirm) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    try {
+      var res =
+          await ApiServices().signUp(name, email, password, passwordConfirm);
 
-    var jsonResponse = null;
+      var jsonResponse = json.decode(res.toString());
+      // print(jsonResponse);
 
-    var response =
-        await ApiServices().signUp(name, email, password, passwordConfirm);
-
-    print(response.statusCode);
-
-    if (response.statusCode == 201) {
-      jsonResponse = json.decode(response.toString());
-      print(jsonResponse);
-
-      if (jsonResponse != null) {
-        setState(() {
-          _isLoading = false;
-        });
-        sharedPreferences.setString('token', jsonResponse['token']);
-        print(jsonResponse['token']);
-        Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (BuildContext context) => HomePage()),
-            (Route<dynamic> route) => false);
-      }
-    } else {
       setState(() {
         _isLoading = false;
       });
-      print(response.body);
+      sharedPreferences.setString('token', jsonResponse['token']);
+      // print(jsonResponse['token']);
+      var snackBar = SnackBar(
+          content: Text('Succesfully Registered!'),
+          duration: Duration(milliseconds: 1500));
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (BuildContext context) => HomePage()),
+          (Route<dynamic> route) => false);
+    } on DioError catch (e) {
+      print(e.response);
+      var snackBar = SnackBar(
+          content: Text(e.response!.data['message']),
+          duration: Duration(milliseconds: 2500));
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      setState(() {
+        _isLoading = false;
+      });
+      // print(e.response!.data['message']);
+      // print(e.response);
     }
   }
 

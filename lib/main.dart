@@ -5,7 +5,9 @@ import 'package:blogging_app/screens/onboarding.dart';
 import 'package:blogging_app/screens/signUp_screen.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() async {
   runApp(MyApp());
 }
 
@@ -14,16 +16,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: '/homePage',  
+      initialRoute: '/homePage',
       routes: {
         '/OnBoarding': (context) => OnBoarding(),
         '/homePage': (context) => HomePage(),
         '/logIn': (context) => LoginScreen(),
         '/signUp': (context) => SignUpPage(),
-        '/createBlog':(context) => CreateBlog(),
+        '/createBlog': (context) => CreateBlog(),
       },
       title: 'Flutter Demo',
-      theme: ThemeData(primarySwatch: Colors.grey),
+      theme: ThemeData(
+        canvasColor: Color(0xff1B262C),
+      ),
       debugShowCheckedModeBanner: false,
     );
   }
